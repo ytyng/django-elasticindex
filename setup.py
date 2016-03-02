@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-from setuptools import setup, find_packages
+from setuptools import setup
 from elasticindex import __author__, __version__, __license__
 
 setup(
@@ -12,7 +12,7 @@ setup(
     author_email='ytyng@live.jp',
     url='https://github.com/ytyng/elasticindex.git',
     keywords='Elasticsearch, Django, Python',
-    packages=find_packages(),
+    packages=['elasticindex'],
     install_requires=['elasticsearch', 'requests_aws4auth'],
     entry_points={
     },
