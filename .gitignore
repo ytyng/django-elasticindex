@@ -12,6 +12,8 @@ temp
 # Python
 *.pyc
 *.pyo
+*.egg-info/
+dist/
 
 # Windows
 Thumbs.db
