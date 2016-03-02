@@ -17,6 +17,14 @@ Django用 Elasticsearch の薄いラッパー
 あまり分厚くない(お節介の少ない)インターフェイスとなっています。
 
 
+
+Install
+=======
+::
+
+  $ pip install django-elasticindex
+
+
 サンプルコード
 =======
 
