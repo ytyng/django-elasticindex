@@ -6,7 +6,7 @@ from elasticindex import __author__, __version__, __license__
 setup(
     name='django-elasticindex',
     version=__version__,
-    description='Elasticsearch Accessor (Django like)',
+    description='Shallow elasticsearch wrapper on Django',
     license=__license__,
     author=__author__,
     author_email='ytyng@live.jp',
