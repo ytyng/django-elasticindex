@@ -1,0 +1,4 @@
+# requirements for test
+six
+elasticsearch
+Django
