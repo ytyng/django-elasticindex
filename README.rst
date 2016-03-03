@@ -195,3 +195,22 @@ Amazon ES へのアクセス許可方法(IAMの作成方法)は Qiita に書き�
 Amazon Elasticsearch Service を Python クライアントで、IAM アカウントを作ってセキュアにアクセスする - Qiita
 
 http://qiita.com/ytyng/items/7c90c0b141aad9a12b38
+
+
+6. テスト
+------
+
+クローンしたリポジトリで
+
+::
+
+  $ pip install -r requirements.txt
+  $ ./runtest.py
+
+実際に ES にアクセスを行う。
+ESがローカルの 9200 ポートで動作していない場合は、local_settings.py を作成
+
+local_settings.py
+::
+
+  ELASTICINDEX_HOSTS = [{'host': 'my-elasticsearch-host', 'port': 9200}]

@@ -116,17 +116,35 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
             client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE)
 
     @classmethod
+    def update_bulk(cls, bulk_body):
+        """
+        バルク更新
+        :type bulk_body: list
+        """
+        client = get_es_client()
+        client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE)
+
+    @classmethod
+    def update(cls, id, data_dict):
+        """
+        1レコードの更新 (insert/update)
+        dict で直接内容を指定する
+        通常はこれは使わず、rebuild_index もしくは rebuild_index_by_source_model を使う
+        :type data_dict: dict
+        """
+        client = get_es_client()
+        client.index(
+            cls.INDEX, cls.DOC_TYPE,
+            data_dict, id=id)
+
+    @classmethod
     def rebuild_index_by_source_model(cls, source_model):
         """
         元モデルを1つ指定してインデックスを再生成
         :param source_model:
         :return:
         """
-        client = get_es_client()
-        client.index(
-            cls.INDEX, cls.DOC_TYPE,
-            cls.data_dict_for_index(source_model),
-            id=cls.get_id_of_source_model(source_model))
+        cls.update(cls.get_id_of_source_model(source_model), cls.data_dict_for_index(source_model))
 
     @classmethod
     def data_dict_for_index(cls, source_model):
