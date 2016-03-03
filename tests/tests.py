@@ -25,7 +25,8 @@ class TestESDocumentTest(TestCase):
         # Simple Query (and wait commit) (OMG)
         for i in range(10):
             try:
-                result = DummyESDocument.objects.get({"term": {"value": "eggs"}})
+                result = DummyESDocument.objects.get(
+                    {"term": {"value": "eggs"}})
                 break
             except DummyESDocument.DoesNotExist:
                 time.sleep(0.3)
