@@ -69,7 +69,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
 
     @classmethod
     def rebuild_index(cls, limit=None, offset=None,
-                      filtering_func=None, bulk_size=1000):
+                      filtering_func=None, bulk_size=1000, **kwargs):
         """
         インデックスを再生成する
         :param limit:
@@ -94,7 +94,8 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
                 client.index(
                     cls.INDEX, cls.DOC_TYPE,
                     cls.data_dict_for_index(source_model),
-                    id=cls.get_id_of_source_model(source_model))
+                    id=cls.get_id_of_source_model(source_model),
+                    **kwargs)
             return
 
         # bulk update
@@ -114,19 +115,21 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         for bulk_body in _get_bulk_body(qs):
             logger.debug('bulk updating.')
             # logger.debug('{}'.format(bulk_body))
-            client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE)
+            client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE,
+                        **kwargs)
 
     @classmethod
-    def update_bulk(cls, bulk_body):
+    def update_bulk(cls, bulk_body, **kwargs):
         """
         バルク更新
         :type bulk_body: list
         """
         client = get_es_client()
-        client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE)
+        client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE,
+                    **kwargs)
 
     @classmethod
-    def update(cls, id, data_dict):
+    def update(cls, id, data_dict, **kwargs):
         """
         1レコードの更新 (insert/update)
         dict で直接内容を指定する
@@ -136,16 +139,17 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         client = get_es_client()
         client.index(
             cls.INDEX, cls.DOC_TYPE,
-            data_dict, id=id)
+            data_dict, id=id, **kwargs)
 
     @classmethod
-    def rebuild_index_by_source_model(cls, source_model):
+    def rebuild_index_by_source_model(cls, source_model, **kwargs):
         """
         元モデルを1つ指定してインデックスを再生成
         :param source_model:
         :return:
         """
-        cls.update(cls.get_id_of_source_model(source_model), cls.data_dict_for_index(source_model))
+        cls.update(cls.get_id_of_source_model(source_model),
+                   cls.data_dict_for_index(source_model), **kwargs)
 
     @classmethod
     def data_dict_for_index(cls, source_model):

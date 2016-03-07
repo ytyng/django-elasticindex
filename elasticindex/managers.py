@@ -13,10 +13,10 @@ logger = logging.getLogger('elasticindex')
 
 
 class ElasticQuerySet(object):
-    def __init__(self, model_cls, body=None, params=None):
+    def __init__(self, model_cls, body=None, **kwargs):
         self.model_cls = model_cls
         self.body = body or {"query": {"match_all": {}}}
-        self.params = params or {}
+        self.kwargs = kwargs or {}
         self.latest_total_count = None
         self.latest_raw_result = None
         self.query_finished = False
@@ -64,7 +64,7 @@ class ElasticQuerySet(object):
         """
         qs = self.__class__(
             self.model_cls, copy.deepcopy(self.body),
-            copy.deepcopy(self.params))
+            **copy.deepcopy(self.kwargs))
         return qs
 
     @cached_property
@@ -78,16 +78,10 @@ class ElasticQuerySet(object):
         :rtype: generator
         """
         with self.log_query():
-            if self.params is not None:
-                result = self.es_client.search(
-                    index=self.model_cls.INDEX,
-                    doc_type=self.model_cls.DOC_TYPE,
-                    body=self.body, params=self.params)
-            else:
-                result = self.es_client.search(
-                    index=self.model_cls.INDEX,
-                    doc_type=self.model_cls.DOC_TYPE,
-                    body=self.body)
+            result = self.es_client.search(
+                index=self.model_cls.INDEX,
+                doc_type=self.model_cls.DOC_TYPE,
+                body=self.body, **self.kwargs)
 
         self.latest_total_count = result['hits']['total']
         self.latest_raw_result = result
@@ -114,13 +108,13 @@ class ElasticQuerySet(object):
             raise self.model_cls.DoesNotExist(id)
         return self.model_cls(result)
 
-    def delete_by_id(self, id):
+    def delete_by_id(self, id, **kwargs):
         """
         Elasticsearch のIDで1件削除
         :param id: elasticsearch document id
         """
         result = self.es_client.delete(
-            self.model_cls.INDEX, self.model_cls.DOC_TYPE, id)
+            self.model_cls.INDEX, self.model_cls.DOC_TYPE, id, **kwargs)
         self.latest_raw_result = result
         return result
 
@@ -207,18 +201,11 @@ class ElasticQuerySet(object):
             del body['sort']
 
         with self.log_query(label='count', body=body):
-            if self.params is not None:
-                result = self.es_client.count(
-                    index=self.model_cls.INDEX,
-                    doc_type=self.model_cls.DOC_TYPE,
-                    body=body, params=self.params
-                )
-            else:
-                result = self.es_client.count(
-                    index=self.model_cls.INDEX,
-                    doc_type=self.model_cls.DOC_TYPE,
-                    body=body
-                )
+            result = self.es_client.count(
+                index=self.model_cls.INDEX,
+                doc_type=self.model_cls.DOC_TYPE,
+                body=body, **self.kwargs
+            )
         self.latest_raw_result = result
         return result['count']
 
@@ -266,8 +253,9 @@ class ElasticDocumentManager(object):
     クラスプロパティっぽい感じで、アクセスされるたびに新しいクエリセットを作ることにした
     """
 
-    def __init__(self, model_cls, body=None, params=None):
+    def __init__(self, model_cls, body=None, **kwargs):
         self.model_cls = model_cls
+        self.kwargs = kwargs
 
     def __get__(self, cls, owner):
         return ElasticQuerySet(self.model_cls)
