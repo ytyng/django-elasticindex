@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-
 import copy
 import logging
 import time
 from collections import OrderedDict
 from contextlib import contextmanager
-
 import six
 from django.utils.functional import cached_property
-
 from .client import get_es_client
 
 logger = logging.getLogger('elasticindex')
@@ -311,24 +308,10 @@ class ElasticIndexManager(object):
     @cached_property
     def create_body_params(self):
         body = {"mappings": self.mappings}
-        if self.model_cls.ALLOW_KUROMOJI:
-            body["settings"] = {
-                "index": {
-                    "analysis": {
-                        "tokenizer": {
-                            "kuromoji": {
-                                "type": "kuromoji_tokenizer"
-                            }
-                        },
-                        "analyzer": {
-                            "analyzer": {
-                                "type": "custom",
-                                "tokenizer": "kuromoji"
-                            }
-                        }
-                    }
-                },
-            }
+
+        index_setting = getattr(self.model_cls, 'INDEX_SETTINGS', None)
+        if index_setting:
+            body["settings"] = index_setting
         return body
 
     def create(self):

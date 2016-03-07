@@ -22,7 +22,8 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
 
     INDEX = "default_index"
     DOC_TYPE = "default_doc_type"
-    ALLOW_KUROMOJI = True  # kuromoji を有効にするか
+    # インデックス生成時の settings辞書
+    INDEX_SETTINGS = None
 
     source_model = None  # インデックス生成元モデル
 
