@@ -174,6 +174,9 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
 
         for field_name, field in self._cached_fields().items():
             if field_name not in es_source:
+                if field.has_default_value():
+                    setattr(self, field_name, field.default)
+                    continue
                 raise self.ResultKeyError(field_name)
             value = field.get_value_from_index_source_value(
                 es_source[field_name])
