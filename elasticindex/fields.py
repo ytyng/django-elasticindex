@@ -1,6 +1,6 @@
 class ElasticDocumentField(object):
     """
-    ElasticDocumentようのField
+    ElasticDocument用のField
     score = ElasticDocumentField(default=0) みたいに使う。
 
     :param default: 値を取得時、無かった場合と None だった場合のデフォルト値
