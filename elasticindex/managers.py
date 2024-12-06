@@ -12,7 +12,7 @@ from .client import get_es_client
 logger = logging.getLogger('elasticindex')
 
 
-class ElasticQuerySet(object):
+class ElasticQuerySet:
     def __init__(self, model_cls, body=None, **kwargs):
         self.model_cls = model_cls
         self.body = body or {"query": {"match_all": {}}}
@@ -20,6 +20,7 @@ class ElasticQuerySet(object):
         self.latest_total_count = None
         self.latest_raw_result = None
         self.query_finished = False
+        self.timeout = None
 
     def __len__(self):
         return len(self.result_list)
@@ -90,12 +91,20 @@ class ElasticQuerySet(object):
         for hit in result['hits']['hits']:
             yield self.model_cls(hit)
 
+    def set_timeout(self, timeout):
+        """
+        :rtype: ElasticQuerySet
+        """
+        o = self._clone()
+        o.timeout = timeout
+        return o
+
     @cached_property
     def es_client(self):
         """
         :rtype: Elasticsearch
         """
-        return get_es_client()
+        return get_es_client(timeout=self.timeout)
 
     def get_by_id(self, id):
         """

@@ -5,7 +5,7 @@ Elasticsearch を Django のモデルっぽく使うクラス
 import logging
 from collections import OrderedDict
 
-from .client import get_es_client
+from .client import DEFAULT_TIMEOUT, get_es_client
 from .fields import ElasticDocumentField
 from .managers import ElasticDocumentMeta
 
@@ -26,11 +26,17 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
 
     source_model = None  # インデックス生成元モデル
 
+    timeout = DEFAULT_TIMEOUT
+
     class DoesNotExist(Exception):
         pass
 
     class ResultKeyError(Exception):
         pass
+
+    @classmethod
+    def get_es_client(cls, *, timeout=None):
+        return get_es_client(timeout=timeout or cls.timeout)
 
     @classmethod
     def _fields(cls):
@@ -73,6 +79,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         offset=None,
         filtering_func=None,
         bulk_size=1000,
+        timeout=None,
         **kwargs,
     ):
         """
@@ -82,7 +89,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         :param filtering_func:
         :return:
         """
-        client = get_es_client()
+        client = cls.get_es_client(timeout=timeout)
         qs = cls.source_model.objects.all()
         if filtering_func is not None:
             qs = filtering_func(qs)
@@ -129,23 +136,23 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
             client.bulk(bulk_body, index=cls.INDEX, **kwargs)
 
     @classmethod
-    def update_bulk(cls, bulk_body, **kwargs):
+    def update_bulk(cls, bulk_body, timeout=None, **kwargs):
         """
         バルク更新
         :type bulk_body: list
         """
-        client = get_es_client()
+        client = cls.get_es_client(timeout=timeout)
         client.bulk(bulk_body, index=cls.INDEX, **kwargs)
 
     @classmethod
-    def update(cls, id, data_dict, **kwargs):
+    def update(cls, id, data_dict, timeout=None, **kwargs):
         """
         1レコードの更新 (insert/update)
         dict で直接内容を指定する
         通常はこれは使わず、rebuild_index もしくは rebuild_index_by_source_model を使う
         :type data_dict: dict
         """
-        client = get_es_client()
+        client = cls.get_es_client(timeout=timeout)
         client.index(cls.INDEX, data_dict, id=id, **kwargs)
 
     @classmethod
