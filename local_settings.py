@@ -1,6 +1,3 @@
-ELASTICINDEX_HOSTS = [{'host': 'virgo.torico-tokyo.com', 'port': 9200}]
-
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -9,10 +6,8 @@ LOGGING = {
             'format': ' %(name)s %(levelname)s %(asctime)s %(message)s'
         },
     },
-    'handlers': {
-    },
-    'loggers': {
-    }
+    'handlers': {},
+    'loggers': {},
 }
 
 

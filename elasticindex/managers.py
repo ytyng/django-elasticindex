@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import copy
 import logging
 import time
 from collections import OrderedDict
 from contextlib import contextmanager
+
 import six
 from django.utils.functional import cached_property
+
 from .client import get_es_client
 
 logger = logging.getLogger('elasticindex')
@@ -36,10 +36,11 @@ class ElasticQuerySet(object):
         """
         if not isinstance(k, (slice,) + six.integer_types):
             raise TypeError
-        assert ((not isinstance(k, slice) and (k >= 0)) or
-                (isinstance(k, slice) and (k.start is None or k.start >= 0) and
-                 (k.stop is None or k.stop >= 0))), \
-            "Negative indexing is not supported."
+        assert (not isinstance(k, slice) and (k >= 0)) or (
+            isinstance(k, slice)
+            and (k.start is None or k.start >= 0)
+            and (k.stop is None or k.stop >= 0)
+        ), "Negative indexing is not supported."
 
         if self.query_finished:
             return self.result_list[k]
@@ -53,7 +54,7 @@ class ElasticQuerySet(object):
             if k.stop is not None:
                 limit = int(k.stop) - offset
                 qs = qs.limit(limit)
-            return list(qs)[::k.step] if k.step else qs
+            return list(qs)[:: k.step] if k.step else qs
 
         qs = self.limit(1).offset(k)
         return list(qs)[0]
@@ -63,8 +64,10 @@ class ElasticQuerySet(object):
         :rtype: ElasticQuerySet
         """
         qs = self.__class__(
-            self.model_cls, copy.deepcopy(self.body),
-            **copy.deepcopy(self.kwargs))
+            self.model_cls,
+            copy.deepcopy(self.body),
+            **copy.deepcopy(self.kwargs),
+        )
         return qs
 
     @cached_property
@@ -79,9 +82,8 @@ class ElasticQuerySet(object):
         """
         with self.log_query():
             result = self.es_client.search(
-                index=self.model_cls.INDEX,
-                doc_type=self.model_cls.DOC_TYPE,
-                body=self.body, **self.kwargs)
+                index=self.model_cls.INDEX, body=self.body, **self.kwargs
+            )
 
         self.latest_total_count = result['hits']['total']
         self.latest_raw_result = result
@@ -101,8 +103,7 @@ class ElasticQuerySet(object):
         :param id:
         :return:
         """
-        result = self.es_client.get(
-            self.model_cls.INDEX, id, doc_type=self.model_cls.DOC_TYPE)
+        result = self.es_client.get(self.model_cls.INDEX, id)
         self.latest_raw_result = result
         if not result['found']:
             raise self.model_cls.DoesNotExist(id)
@@ -113,8 +114,7 @@ class ElasticQuerySet(object):
         Elasticsearch のIDで1件削除
         :param id: elasticsearch document id
         """
-        result = self.es_client.delete(
-            self.model_cls.INDEX, self.model_cls.DOC_TYPE, id, **kwargs)
+        result = self.es_client.delete(self.model_cls.INDEX, id, **kwargs)
         self.latest_raw_result = result
         return result
 
@@ -202,9 +202,7 @@ class ElasticQuerySet(object):
 
         with self.log_query(label='count', body=body):
             result = self.es_client.count(
-                index=self.model_cls.INDEX,
-                doc_type=self.model_cls.DOC_TYPE,
-                body=body, **self.kwargs
+                index=self.model_cls.INDEX, body=body, **self.kwargs
             )
         self.latest_raw_result = result
         return result['count']
@@ -234,16 +232,21 @@ class ElasticQuerySet(object):
             start_time = time.time()
             yield
             elapsed_time = time.time() - start_time
-            logger.debug('{}time:{}ms, body:{}'.format(
-                '{}: '.format(label) if label else '',
-                int(elapsed_time * 100), body or self.body))
+            logger.debug(
+                '{}time:{}ms, body:{}'.format(
+                    '{}: '.format(label) if label else '',
+                    int(elapsed_time * 100),
+                    body or self.body,
+                )
+            )
 
         return _context
 
     def bulk(self, body):
         return self.es_client.bulk(
-            body, index=self.model_cls.INDEX,
-            doc_type=self.model_cls.DOC_TYPE)
+            body,
+            index=self.model_cls.INDEX,
+        )
 
 
 class ElasticDocumentManager(object):
@@ -270,20 +273,16 @@ class ElasticIndexManager(object):
         return OrderedDict(
             [
                 (f_name, f.mapping)
-                for f_name, f
-                in self.model_cls._cached_fields().items()
-                ])
+                for f_name, f in self.model_cls._cached_fields().items()
+            ]
+        )
 
     @cached_property
     def mappings(self):
         """
         インデックスの mappings の指定にそのまま使える dict
         """
-        return {
-            self.model_cls.DOC_TYPE: {
-                "properties": self.mappings_properties
-            }
-        }
+        return {"properties": self.mappings_properties}
 
     def delete(self):
         """
@@ -291,7 +290,12 @@ class ElasticIndexManager(object):
         :return:
         """
         es = get_es_client()
-        es.indices.delete(self.model_cls.INDEX, ignore=[404, ])
+        es.indices.delete(
+            self.model_cls.INDEX,
+            ignore=[
+                404,
+            ],
+        )
 
     @cached_property
     def create_body_params(self):
@@ -308,8 +312,7 @@ class ElasticIndexManager(object):
         :return:
         """
         es = get_es_client()
-        es.indices.create(
-            self.model_cls.INDEX, self.create_body_params)
+        es.indices.create(self.model_cls.INDEX, self.create_body_params)
 
     def exists(self):
         """
@@ -321,8 +324,7 @@ class ElasticIndexManager(object):
 
 class ElasticDocumentMeta(type):
     def __new__(mcs, name, bases, attrs):
-        c = super(ElasticDocumentMeta, mcs).__new__(
-            mcs, name, bases, attrs)
+        c = super(ElasticDocumentMeta, mcs).__new__(mcs, name, bases, attrs)
 
         c.objects = ElasticDocumentManager(c)
         c.index = ElasticIndexManager(c)

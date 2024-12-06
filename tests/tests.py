@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import unicode_literals
 import time
+
 from django.test import TestCase
-from .models import DummyModel, DummyESDocument, DummyESDocumentPresetIndex
+
+from .models import DummyESDocument, DummyESDocumentPresetIndex, DummyModel
 
 
 class TestESDocumentTest(TestCase):
@@ -26,10 +25,11 @@ class TestESDocumentTest(TestCase):
         DummyESDocument.update('id-manually', {'key': 'spam', 'value': 'eggs'})
 
         # Wait commit
-        for i in range(10):
+        for _i in range(10):
             try:
                 result = DummyESDocument.objects.get(
-                    {"term": {"value": "eggs"}})
+                    {"term": {"value": "eggs"}}
+                )
                 break
             except DummyESDocument.DoesNotExist:
                 time.sleep(0.3)
@@ -39,18 +39,21 @@ class TestESDocumentTest(TestCase):
     def test_index_search(self):
 
         # Simple query
-        results = DummyESDocument.objects.query({"match": {"key": "jumps"}})
+        results = DummyESDocument.objects.query({"term": {"key": "jumps"}})
         result = list(results)[0]
         self.assertEqual(result.value, 'over the')
 
         # OR query
         qs = DummyESDocument.objects.query(
-            {"bool": {
-                "should": [
-                    {"match": {"value": "dogs"}},
-                    {"match": {"value": "fox"}},
-
-                ]}})
+            {
+                "bool": {
+                    "should": [
+                        {"match": {"value": "dogs"}},
+                        {"match": {"value": "fox"}},
+                    ]
+                }
+            }
+        )
         qs = qs.order_by({"key": "desc"})
         result = qs[1]
         self.assertEqual(result.value, "dogs.")
@@ -66,31 +69,38 @@ class TestESDocumentPresetIndexTest(TestCase):
             DummyESDocumentPresetIndex.index.delete()
         DummyESDocumentPresetIndex.index.create()
         DummyESDocumentPresetIndex.update(
-            'doc1', {
+            'doc1',
+            {
                 'key': 'doc1',
-                'text_k': "セキュリティのため、ローカルホストやローカルネットワークに"
-                          "しかアクセスを許可していない Web アプリってあると思います。",
+                'text_s': "For security reasons, there may be some web apps "
+                "that only allow access to localhost or the "
+                "local network.",
                 'text_b': "例えば、オフィスで起動している社内サーバ。Jenkinsとか。"
-                          "Wikiとか。サーバ監視ツールとか。例えば、本番環境で起動"
-                          "している Docker コンテナの中で動いているWebツールとか。",
-            })
+                "Wikiとか。サーバ監視ツールとか。例えば、本番環境で起動"
+                "している Docker コンテナの中で動いているWebツールとか。",
+            },
+        )
         DummyESDocumentPresetIndex.update(
-            'doc2', {
+            'doc2',
+            {
                 'key': 'doc2',
-                'text_k': "私の場合は、elasticsearch の head プラグインのWeb"
-                          "管理画面を起動しているのですが、ローカルホストからしか"
-                          "アクセスを許可してませんので、外からアクセスするには"
-                          "一工夫必要です。",
+                'text_s': "In my case, I have launched the web administration "
+                "screen of the elasticsearch head plugin, "
+                "but since access is only permitted from "
+                "the local host, I need to use a little ingenuity "
+                "to access it from outside.",
                 'text_b': "クライアントは Firefox に入ってますし、サーバは OpenSSH "
-                          "に組み込まれていますので、別途ソフトウェアのインストールは"
-                          "不要です。",
-            })
+                "に組み込まれていますので、別途ソフトウェアのインストールは"
+                "不要です。",
+            },
+        )
 
         # Simple Query (and wait commit) (OMG)
-        for i in range(10):
+        for _i in range(10):
             try:
                 result = DummyESDocumentPresetIndex.objects.get(
-                    {"term": {"key": "doc2"}})
+                    {"term": {"key": "doc2"}}
+                )
                 break
             except DummyESDocumentPresetIndex.DoesNotExist:
                 time.sleep(0.3)
@@ -99,35 +109,46 @@ class TestESDocumentPresetIndexTest(TestCase):
 
     def test_index_kuromoji_1(self):
         results = DummyESDocumentPresetIndex.objects.query(
-            {"match": {"text_k": "起動"}})
+            {"match": {"text_s": "launched"}}
+        )
         r = list(results)
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].key, 'doc2')
 
     def test_index_kuromoji_2(self):
         results = DummyESDocumentPresetIndex.objects.query(
-            {"match": {"text_k": "ネットワーク"}})
+            {"match": {"text_s": "network"}}
+        )
         r = list(results)
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].key, 'doc1')
 
     def test_index_bigram_1(self):
         results = DummyESDocumentPresetIndex.objects.query(
-            {"match": {"text_b": "ソフトウ"}})
+            {"match": {"text_b": "ソフトウ"}}
+        )
         r = list(results)
+        print('------------------------------------------------')
+        print('test_index_bigram_1 result:')
+        print(r)
+        for i in r:
+            print(i.key, i.text_b)
+        print('------------------------------------------------')
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].key, 'doc2')
 
     def test_index_bigram_2(self):
         results = DummyESDocumentPresetIndex.objects.query(
-            {"match": {"text_b": "視ツ"}})
+            {"match": {"text_b": "視ツ"}}
+        )
         r = list(results)
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].key, 'doc1')
 
     def test_index_bigram_3(self):
         results = DummyESDocumentPresetIndex.objects.query(
-            {"match": {"text_b": "Firefoxサーバ"}})
+            {"match": {"text_b": "Firefoxサーバ"}}
+        )
         list(results)
         # r = list(results)
         # len(r) がここで0にならないといけない。が、なってない
