@@ -21,7 +21,6 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
     """
 
     INDEX = "default_index"
-    DOC_TYPE = "default_doc_type"
     # インデックス生成時の settings辞書
     INDEX_SETTINGS = None
 
@@ -92,7 +91,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
             for source_model in qs:
                 logger.debug('source_model: {}'.format(source_model))
                 client.index(
-                    cls.INDEX, cls.DOC_TYPE,
+                    cls.INDEX,
                     cls.data_dict_for_index(source_model),
                     id=cls.get_id_of_source_model(source_model),
                     **kwargs)
@@ -115,8 +114,9 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         for bulk_body in _get_bulk_body(qs):
             logger.debug('bulk updating.')
             # logger.debug('{}'.format(bulk_body))
-            client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE,
-                        **kwargs)
+            client.bulk(
+                bulk_body, index=cls.INDEX,
+                **kwargs)
 
     @classmethod
     def update_bulk(cls, bulk_body, **kwargs):
@@ -125,8 +125,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         :type bulk_body: list
         """
         client = get_es_client()
-        client.bulk(bulk_body, index=cls.INDEX, doc_type=cls.DOC_TYPE,
-                    **kwargs)
+        client.bulk(bulk_body, index=cls.INDEX, **kwargs)
 
     @classmethod
     def update(cls, id, data_dict, **kwargs):
@@ -138,8 +137,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         """
         client = get_es_client()
         client.index(
-            cls.INDEX, cls.DOC_TYPE,
-            data_dict, id=id, **kwargs)
+            cls.INDEX, data_dict, id=id, **kwargs)
 
     @classmethod
     def rebuild_index_by_source_model(cls, source_model, **kwargs):

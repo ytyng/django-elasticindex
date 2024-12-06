@@ -80,7 +80,6 @@ class ElasticQuerySet(object):
         with self.log_query():
             result = self.es_client.search(
                 index=self.model_cls.INDEX,
-                doc_type=self.model_cls.DOC_TYPE,
                 body=self.body, **self.kwargs)
 
         self.latest_total_count = result['hits']['total']
@@ -102,7 +101,7 @@ class ElasticQuerySet(object):
         :return:
         """
         result = self.es_client.get(
-            self.model_cls.INDEX, id, doc_type=self.model_cls.DOC_TYPE)
+            self.model_cls.INDEX, id)
         self.latest_raw_result = result
         if not result['found']:
             raise self.model_cls.DoesNotExist(id)
@@ -114,7 +113,7 @@ class ElasticQuerySet(object):
         :param id: elasticsearch document id
         """
         result = self.es_client.delete(
-            self.model_cls.INDEX, self.model_cls.DOC_TYPE, id, **kwargs)
+            self.model_cls.INDEX, id, **kwargs)
         self.latest_raw_result = result
         return result
 
@@ -203,7 +202,6 @@ class ElasticQuerySet(object):
         with self.log_query(label='count', body=body):
             result = self.es_client.count(
                 index=self.model_cls.INDEX,
-                doc_type=self.model_cls.DOC_TYPE,
                 body=body, **self.kwargs
             )
         self.latest_raw_result = result
@@ -243,7 +241,7 @@ class ElasticQuerySet(object):
     def bulk(self, body):
         return self.es_client.bulk(
             body, index=self.model_cls.INDEX,
-            doc_type=self.model_cls.DOC_TYPE)
+        )
 
 
 class ElasticDocumentManager(object):
@@ -280,9 +278,7 @@ class ElasticIndexManager(object):
         インデックスの mappings の指定にそのまま使える dict
         """
         return {
-            self.model_cls.DOC_TYPE: {
-                "properties": self.mappings_properties
-            }
+            "properties": self.mappings_properties
         }
 
     def delete(self):
