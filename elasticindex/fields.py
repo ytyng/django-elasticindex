@@ -14,9 +14,14 @@ class ElasticDocumentField(object):
     class NotProvided(object):
         pass
 
-    def __init__(self, verbose_name=None, mapping=None,
-                 source_attr_name=None, source_value_getter=None,
-                 default=NotProvided):
+    def __init__(
+        self,
+        verbose_name=None,
+        mapping=None,
+        source_attr_name=None,
+        source_value_getter=None,
+        default=NotProvided,
+    ):
         self.verbose_name = verbose_name
         self.mapping = mapping or {}
         self.source_attr_name = source_attr_name

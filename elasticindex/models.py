@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 Elasticsearch を Django のモデルっぽく使うクラス
 """
-from __future__ import unicode_literals
+
 import logging
 from collections import OrderedDict
+
 from .client import get_es_client
-from .managers import ElasticDocumentMeta
 from .fields import ElasticDocumentField
+from .managers import ElasticDocumentMeta
 
 logger = logging.getLogger('elasticindex')
 
@@ -67,8 +67,14 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         return cls._fields_cache
 
     @classmethod
-    def rebuild_index(cls, limit=None, offset=None,
-                      filtering_func=None, bulk_size=1000, **kwargs):
+    def rebuild_index(
+        cls,
+        limit=None,
+        offset=None,
+        filtering_func=None,
+        bulk_size=1000,
+        **kwargs,
+    ):
         """
         インデックスを再生成する
         :param limit:
@@ -81,7 +87,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         if filtering_func is not None:
             qs = filtering_func(qs)
         if offset:
-            qs = qs[offset:offset + limit]
+            qs = qs[offset : offset + limit]
         elif limit:
             qs = qs[:limit]
 
@@ -94,7 +100,8 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
                     cls.INDEX,
                     cls.data_dict_for_index(source_model),
                     id=cls.get_id_of_source_model(source_model),
-                    **kwargs)
+                    **kwargs,
+                )
             return
 
         # bulk update
@@ -102,8 +109,13 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
             bulk_body = []
             for source_model in qs:
                 logger.debug('source_model: {}'.format(source_model))
-                bulk_body.append({'index': {
-                    "_id": cls.get_id_of_source_model(source_model)}})
+                bulk_body.append(
+                    {
+                        'index': {
+                            "_id": cls.get_id_of_source_model(source_model)
+                        }
+                    }
+                )
                 bulk_body.append(cls.data_dict_for_index(source_model))
                 if len(bulk_body) > bulk_size:
                     yield bulk_body
@@ -114,9 +126,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         for bulk_body in _get_bulk_body(qs):
             logger.debug('bulk updating.')
             # logger.debug('{}'.format(bulk_body))
-            client.bulk(
-                bulk_body, index=cls.INDEX,
-                **kwargs)
+            client.bulk(bulk_body, index=cls.INDEX, **kwargs)
 
     @classmethod
     def update_bulk(cls, bulk_body, **kwargs):
@@ -136,8 +146,7 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         :type data_dict: dict
         """
         client = get_es_client()
-        client.index(
-            cls.INDEX, data_dict, id=id, **kwargs)
+        client.index(cls.INDEX, data_dict, id=id, **kwargs)
 
     @classmethod
     def rebuild_index_by_source_model(cls, source_model, **kwargs):
@@ -146,15 +155,19 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
         :param source_model:
         :return:
         """
-        cls.update(cls.get_id_of_source_model(source_model),
-                   cls.data_dict_for_index(source_model), **kwargs)
+        cls.update(
+            cls.get_id_of_source_model(source_model),
+            cls.data_dict_for_index(source_model),
+            **kwargs,
+        )
 
     @classmethod
     def data_dict_for_index(cls, source_model):
         params = {}
         for name, field in cls._cached_fields().items():
             params[name] = field.get_value_for_index_of_source_model(
-                source_model)
+                source_model
+            )
         return params
 
     @classmethod
@@ -177,5 +190,6 @@ class ElasticDocument(object, metaclass=ElasticDocumentMeta):  # flake8: NOQA
                     continue
                 raise self.ResultKeyError(field_name)
             value = field.get_value_from_index_source_value(
-                es_source[field_name])
+                es_source[field_name]
+            )
             setattr(self, field_name, value)
