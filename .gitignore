@@ -58,3 +58,4 @@ Podfile.lock
 # config/*
 
 .local_settings.py
+~*
