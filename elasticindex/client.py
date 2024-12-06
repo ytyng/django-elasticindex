@@ -9,7 +9,7 @@ from django.conf import settings
 DEFAULT_TIMEOUT = 10
 
 
-def get_es_client(*, timeout=DEFAULT_TIMEOUT):
+def get_es_client(*, timeout=None):
     """
     :return: Elasticsearch
     :rtype: Elasticsearch
@@ -17,11 +17,11 @@ def get_es_client(*, timeout=DEFAULT_TIMEOUT):
     if getattr(settings, 'ELASTICINDEX_AWS_IAM', None):
         return _get_es_client_aws(timeout=timeout)
     return elasticsearch.Elasticsearch(
-        settings.ELASTICINDEX_HOSTS, timeout=timeout
+        settings.ELASTICINDEX_HOSTS, timeout=timeout or DEFAULT_TIMEOUT
     )
 
 
-def _get_es_client_aws(*, timeout=DEFAULT_TIMEOUT):
+def _get_es_client_aws(*, timeout=None):
     """
     IAM を使って、Amazon ES にアクセスする場合
     :rtype: Elasticsearch
@@ -50,5 +50,5 @@ def _get_es_client_aws(*, timeout=DEFAULT_TIMEOUT):
         use_ssl=True,
         verify_certs=True,
         connection_class=elasticsearch.connection.RequestsHttpConnection,
-        timeout=timeout,
+        timeout=timeout or DEFAULT_TIMEOUT,
     )
