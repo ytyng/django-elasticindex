@@ -12,7 +12,7 @@ setup(
     version=__version__,
     description='Shallow elasticsearch wrapper on Django',
     long_description=long_description,
-    long_description_content_type='text/x-rst',
+    long_description_content_type='text/markdown',
     license=__license__,
     author=__author__,
     author_email='ytyng@live.jp',
