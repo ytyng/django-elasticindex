@@ -17,7 +17,14 @@ class ElasticQuerySet:
         self.model_cls = model_cls
         self.body = body or {"query": {"match_all": {}}}
         self.kwargs = kwargs or {}
+
+        # クエリ結果の件数
         self.latest_total_count = None
+
+        # クエリ結果の件数が、正確な値(eq)か、概算(gte)か。
+        # 概算を避ける場合、クエリの最上位で track_total_hits: true を指定する。
+        self.latest_total_relation = None
+
         self.latest_raw_result = None
         self.query_finished = False
         self.timeout = None
@@ -86,7 +93,14 @@ class ElasticQuerySet:
                 index=self.model_cls.INDEX, body=self.body, **self.kwargs
             )
 
-        self.latest_total_count = result['hits']['total']
+        if isinstance(result['hits']['total'], dict):
+            # ES 7 以降は hits.total が dict になっている
+            self.latest_total_count = result['hits']['total']['value']
+            self.latest_total_relation = result['hits']['total']['relation']
+        elif isinstance(result['hits']['total'], int):
+            # ES 6 までは hits.total が int
+            self.latest_total_count = result['hits']['total']
+
         self.latest_raw_result = result
         for hit in result['hits']['hits']:
             yield self.model_cls(hit)
